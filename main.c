@@ -8,12 +8,6 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-void logexit(const char *str){
-    if(errno) perror(str);
-    else puts(str);
-    exit(EXIT_FAILURE);
-}
-
 //cabeçalho
 typedef struct header{
 	char syn[4];
@@ -22,32 +16,54 @@ typedef struct header{
 	char reserved[2];
 }header;
 
+//parametros da thread
+typedef struct parameters{
+	FILE *output;
+	int socket;
+}parameters; 
+
+void logexit(const char *str){
+    if(errno) perror(str);
+    else puts(str);
+    exit(EXIT_FAILURE);
+}
+
+void *receptor(void *parameter){
+	parameters p1;
+	p1 = *(parameters*) parameter;
+	printf("A thread chegou aqui\n");
+	return NULL;
+}
+
 int main(int argc, char *argv[]){
-	if(argc != 6) return -1;
+
 	//variaveis
 	int numip;
 	int numport;
-	char *mode; 
+	char mode[10]; 
 	FILE *input, *output;
 	int mysock, newsock;
 	header h1, h2;
-
+    parameters p1;
+    pthread_t thread_id;
 	//inicializações
-	input = fopen( argv[1], "r" );
-	output = fopen( argv[2], "w" );
+	input = fopen( argv[1], "w" );
+	output = fopen( argv[2], "r" );
 	numip = atoi( argv[3] );
 	numport = atoi( argv[4] );
-	mode = argv[5];
+	strcpy( mode , argv[5] );
 	strcpy( h1.syn, "DCC023C2" );
 	strcpy( h2.syn, "DCC023C2" );
-	strcpy( h1.reserved, "0000" );
-	strcpy( h2.reserved, "0000" );
-
-	mysock = socket(AF_INET, SOCK_STREAM, 0); //cria o socket
+	//strcpy( h1.reserved, "0000" );
+	//strcpy( h2.reserved, "0000" );
+    p1.output = output;
+	//cria socket
+	mysock = socket(AF_INET, SOCK_STREAM, 0); 
 	if (mysock == -1) logexit("socket");
 
     //address structure
-    struct in_addr addr = { .s_addr = htonl(numip) };
+    //struct in_addr addr = { .s_addr = htonl(numip) };
+    struct in_addr addr = { .s_addr = htonl(INADDR_LOOPBACK) };
     struct sockaddr_in dst = { .sin_family = AF_INET,
                                .sin_port = htons(numport),
                                .sin_addr = addr };
@@ -55,18 +71,22 @@ int main(int argc, char *argv[]){
 
 	//modo ativo
 	if(strcmp(mode, "ativo") == 0){
+printf("modo ativo\n");
 		//abertura ativa
 		if(connect(mysock, sa_dst, sizeof(dst))){
 			logexit("connect");
 		} 
-
+printf("ABRIU\n");
+		p1.socket = mysock;
+		//pthread_create( &thread_id , NULL, receptor , (void*) &p1);
+printf("passou da thread\n");
 		//transmissor
 		//receptor
 
 	}
-
 	//modo passivo
 	else if(strcmp( mode, "passivo" ) == 0 ){
+printf("modo passivo\n");
 		//abertura passiva
     	if( bind(mysock, sa_dst, sizeof(dst)) < 0){
       		close(mysock);
@@ -77,16 +97,21 @@ int main(int argc, char *argv[]){
       		close(mysock);
       		logexit("ERROR listening\n");
     	}
+printf("ESPERANDO CONEXAO");
 
     	while(1){
     		//client adress structure
-    		struct in_addr client_addr = { .s_addr = htonl(numip) }; 
+    		//struct in_addr client_addr = { .s_addr = htonl(numip) };
+    		struct in_addr client_addr = { .s_addr = htonl(INADDR_ANY) }; 
     		socklen_t client_len = sizeof(client_addr);
 
     		//completa a abertura passiva
     		newsock = accept(mysock, (struct sockaddr *)&client_addr, &client_len);
     		}
-
+printf("ACEITOU CONEXAO");
+    		p1.socket = newsock;
+    		//pthread_create( &thread_id , NULL ,  receptor , (void*) &p1);
+printf("passou da thread\n");
     		//transmissor
     		//receptor
 	}
