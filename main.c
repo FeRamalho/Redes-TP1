@@ -33,8 +33,8 @@ int main(int argc, char *argv[]){
 
 	struct in_addr addr = { .s_addr = inet_addr(numip) }; 
 	struct sockaddr_in address = {	.sin_family = AF_INET,
-									.sin_port = htons(numport),
-									.sin_addr = addr };
+                                    .sin_port = htons(numport),
+	                                .sin_addr = addr };
 	struct sockaddr_in client_addr;
 
 	//fazer uma thread para o servidor e outra para o clientes
