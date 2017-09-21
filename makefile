@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -Wall -std=c99 -pedantic
+CFLAGS = -Wall -std=c99 -pedantic -pthread
 
 RM = rm -f
 
