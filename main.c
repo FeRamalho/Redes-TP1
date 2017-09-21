@@ -78,7 +78,7 @@ printf("modo ativo\n");
 		} 
 printf("ABRIU\n");
 		p1.socket = mysock;
-		//pthread_create( &thread_id , NULL, receptor , (void*) &p1);
+		pthread_create( &thread_id , NULL, receptor , (void*) &p1);
 printf("passou da thread\n");
 		//transmissor
 		//receptor
@@ -110,7 +110,7 @@ printf("ESPERANDO CONEXAO");
     		}
 printf("ACEITOU CONEXAO");
     		p1.socket = newsock;
-    		//pthread_create( &thread_id , NULL ,  receptor , (void*) &p1);
+    		pthread_create( &thread_id , NULL ,  receptor , (void*) &p1);
 printf("passou da thread\n");
     		//transmissor
     		//receptor
