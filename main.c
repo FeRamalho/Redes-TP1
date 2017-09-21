@@ -15,25 +15,20 @@ void logexit(const char *str)
 }
 
 int main(int argc, char *argv[]){
-	//FILE* arqin, arqout;
-	char* numip, numport;
-	char* mode;
+	char *arqin, *arqout; //nome dos arquivo de entrada
+	char *numip, *numport;
+	char *mode; //ativo ou passivo
 
-	if(argc != 6){
-		printf("Errinho\n");
+	if(argc != 6)
 		return -1;
-		
-	}
-	//arqin = argv[1];
-	//arqout = argv[2];
+
+	arqin = argv[1];
+	arqout = argv[2];
 	numip = argv[3];
-	numport = atoi(argv[4]);
+	//numport = atoi(argv[4]);
+	numport = argv[4];
 	mode = argv[5];
-	printf("%s\n", numip);
-	printf("%d\n", numport);
-	printf("%s\n", mode);
-	//printf("%s\n", arqin);
-	//printf("%s\n", arqout);
+	
 
 	return 0;
 }
