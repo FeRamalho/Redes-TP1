@@ -6,43 +6,93 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
-void logexit(const char *str)
-{
+void logexit(const char *str){
     if(errno) perror(str);
     else puts(str);
     exit(EXIT_FAILURE);
 }
 
+//cabeçalho
+typedef struct header{
+	char syn[4];
+	char chksum[2];
+	char length[2];
+	char reserved[2];
+}header;
+
 int main(int argc, char *argv[]){
-	char *arqin, *arqout; //nome dos arquivo de entrada
-	char *numip;
+	if(argc != 6) return -1;
+	//variaveis
+	int numip;
 	int numport;
-	char *mode; //ativo ou passivo
+	char *mode; 
+	FILE *input, *output;
+	int mysock, newsock;
+	header h1, h2;
 
-	if(argc != 6)
-		return -1;
-
-	arqin = argv[1]; arqout = argv[2];
-	numip = argv[3]; numport = atoi(argv[4]);
+	//inicializações
+	input = fopen( argv[1], "r" );
+	output = fopen( argv[2], "w" );
+	numip = atoi( argv[3] );
+	numport = atoi( argv[4] );
 	mode = argv[5];
+	strcpy( h1.syn, "DCC023C2" );
+	strcpy( h2.syn, "DCC023C2" );
+	strcpy( h1.reserved, "0000" );
+	strcpy( h2.reserved, "0000" );
 
-	int s = socket(AF_INET, SOCK_STREAM, 0); //cria o socket
-	if (s == -1)
-		logexit("socket");
+	mysock = socket(AF_INET, SOCK_STREAM, 0); //cria o socket
+	if (mysock == -1) logexit("socket");
 
-	struct in_addr addr = { .s_addr = inet_addr(numip) }; 
-	struct sockaddr_in address = {	.sin_family = AF_INET,
-                                    .sin_port = htons(numport),
-	                                .sin_addr = addr };
-	struct sockaddr_in client_addr;
+    //address structure
+    struct in_addr addr = { .s_addr = htonl(numip) };
+    struct sockaddr_in dst = { .sin_family = AF_INET,
+                               .sin_port = htons(numport),
+                               .sin_addr = addr };
+    struct sockaddr *sa_dst = (struct sockaddr *)&dst;
 
-	//fazer uma thread para o servidor e outra para o clientes
-	printf("%s\n", numip);
-	printf("%d\n", numport);
-	printf("%s\n", mode);
-	printf("%s\n", arqin);
-	printf("%s\n", arqout);
+	//modo ativo
+	if(strcmp(mode, "ativo") == 0){
+		//abertura ativa
+		if(connect(mysock, sa_dst, sizeof(dst))){
+			logexit("connect");
+		} 
 
+		//transmissor
+		//receptor
+
+	}
+
+	//modo passivo
+	else if(strcmp( mode, "passivo" ) == 0 ){
+		//abertura passiva
+    	if( bind(mysock, sa_dst, sizeof(dst)) < 0){
+      		close(mysock);
+    	}
+
+    	//espera de conexão
+    	if( listen(mysock, 1) < 0 ){
+      		close(mysock);
+      		logexit("ERROR listening\n");
+    	}
+
+    	while(1){
+    		//client adress structure
+    		struct in_addr client_addr = { .s_addr = htonl(numip) }; 
+    		socklen_t client_len = sizeof(client_addr);
+
+    		//completa a abertura passiva
+    		newsock = accept(mysock, (struct sockaddr *)&client_addr, &client_len);
+    		}
+
+    		//transmissor
+    		//receptor
+	}
+	close(mysock);
+	close(newsock);
+	fclose(input);
+	fclose(output);
 	return 0;
 }
