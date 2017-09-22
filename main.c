@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#define MAX_BUF 4096
+
 //cabeçalho
 typedef struct header{
 	char syn[8];
@@ -26,6 +28,26 @@ void logexit(const char *str){
     if(errno) perror(str);
     else puts(str);
     exit(EXIT_FAILURE);
+}
+
+//calcula o checksum
+unsigned checksum(void *buffer, size_t len, unsigned int count)
+{
+      unsigned char *buf = (unsigned char *)buffer;
+      size_t i;
+
+      for (i = 0; i < len; i++)
+            count += (unsigned int)(*buf++);
+      return count;
+}
+
+//retorna o valor do checksum
+unsigned checkresult(FILE *f){
+	char buf[MAX_BUF];
+	size_t len;
+	len = fread(buf, sizeof(char), sizeof(buf), f);
+	unsigned long check = checksum(buf, len, 0);
+	return check;
 }
 
 void *receptor(void *parameter){
