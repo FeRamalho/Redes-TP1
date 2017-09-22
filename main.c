@@ -31,14 +31,12 @@ void logexit(const char *str){
 }
 
 //calcula o checksum
-unsigned checksum(void *buffer, size_t len, unsigned int count)
-{
-      unsigned char *buf = (unsigned char *)buffer;
-      size_t i;
-
-      for (i = 0; i < len; i++)
-            count += (unsigned int)(*buf++);
-      return count;
+unsigned checksum(void *buffer, size_t len, unsigned int count){
+	unsigned char *buf = (unsigned char *)buffer;
+	size_t i;
+	for (i=0; i<len; i++)
+		count += (unsigned int)(*buf++);
+	return count;
 }
 
 //retorna o valor do checksum
