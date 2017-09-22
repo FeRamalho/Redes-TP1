@@ -1,22 +1,5 @@
-CC = gcc
-
-CFLAGS = -Wall -std=c99 -pedantic -pthread
-
-RM = rm -f
-
-OBJS = main.o
-
-MAIN = main
-
-$(MAIN): $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -o $(MAIN)
-
-%.o: %.c
-	@$(CC) $(CFLAGS) $< -c 
-
-clean:
-	$(RM) $(MAIN) *.o
+make:
+	gcc -o frame main.c -lpthread
 	clear
-
-run: $(MAIN)
-	./$(MAIN)
+run:
+	./frame input.txt output.txt -1 51515 passivo

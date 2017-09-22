@@ -10,7 +10,7 @@
 
 //cabeçalho
 typedef struct header{
-	char syn[4];
+	char syn[8];
 	char chksum[2];
 	char length[2];
 	char reserved[2];
@@ -29,9 +29,14 @@ void logexit(const char *str){
 }
 
 void *receptor(void *parameter){
-	parameters p1;
-	p1 = *(parameters*) parameter;
-	printf("A thread chegou aqui\n");
+	parameters *p1;
+	p1 = (parameters*)parameter;
+	FILE *output = p1->output;
+	int mysock = p1->socket;
+char buffer[8];
+strcpy(buffer, "DCC023C2"); 
+printf("%s\n", buffer);
+send(mysock, buffer, 8, 0);
 	return NULL;
 }
 
@@ -90,14 +95,15 @@ printf("modo passivo\n");
 		//abertura passiva
     	if( bind(mysock, sa_dst, sizeof(dst)) < 0){
       		close(mysock);
+      		logexit("EEROR: binding");
     	}
-
+printf("bound\n");
     	//espera de conexão
     	if( listen(mysock, 1) < 0 ){
       		close(mysock);
       		logexit("ERROR listening\n");
     	}
-printf("ESPERANDO CONEXAO");
+printf("ESPERANDO CONEXAO\n");
 
     	while(1){
     		//client adress structure
@@ -107,13 +113,17 @@ printf("ESPERANDO CONEXAO");
 
     		//completa a abertura passiva
     		newsock = accept(mysock, (struct sockaddr *)&client_addr, &client_len);
-    		}
-printf("ACEITOU CONEXAO");
+printf("ACEITOU CONEXAO\n");
+int len;
+char buf[8];
+len = recv(newsock, buf, 8, MSG_WAITALL);
+printf("%d\nmensagem: %s\n", len, buf);
     		p1.socket = newsock;
-    		pthread_create( &thread_id , NULL ,  receptor , (void*) &p1);
+    		//pthread_create( &thread_id , NULL ,  receptor , (void*) &p1);
 printf("passou da thread\n");
     		//transmissor
     		//receptor
+    	}
 	}
 	close(mysock);
 	close(newsock);
