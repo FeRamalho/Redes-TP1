@@ -1,0 +1,104 @@
+\documentclass[12pt]{article}
+
+% Packages used
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\title{\LARGE \textbf{\uppercase{Programação modular\\Trabalho prático 2: Poker Texas Hold'em}} }
+\date{12 de junho, 2017}
+\author{Rafael Rubbioli\\
+\and Manoel da Rocha\\
+\and Danilo Viana\\ Departamento de Ciência da computação, UFMG}
+\begin{document}
+	\begin{titlepage}
+		\maketitle
+	\end{titlepage}
+	\section{Introdução}
+	O jogo Poker é um dos jogos mais jogados do mundo. Por isso, neste trabalho implementaremos nossa versão do jogo, com algumas alterações. O objetivo disso é utilizarmos de práticas de projetos orientados a objeto e aprofundarmos no conhecimento de orientação a objeto. Além disso, nos familiarizaremos com o projeto usando diagramas UML e padrões de projeto.
+	\section{O jogo}
+	Poker é um jogo de apostas extremamente famoso em todo o mundo. Devido a isso, existem várias modalidades do jogo com regras variadas e usaremos uma versão simplificada da modalidade Texas Hold'em. 
+    Nosso jogo contém um jogador interativo, ou seja, o humano que jogará e três jogadores que são inteligências
+    artificiais simples.
+	\subsection{Regras}
+        Nossa versão do poker foi simplificada, pois acreditamos que o foco do trabalho seja a utilização correta das
+        técnicas de padrão de projetos.
+        O jogo começa perguntando ao jogador o preço do blind, valor a ser pago por todos para participar da rodada. Na
+        nossa versão o blind é obrigatorio a todos, caso não tenha dinheiro, o jogador é eliminado das rodadas futuras.
+        Cada jogador recebe duas cartas, a mesa recebe cinco cartas, primeiramente apenas três são abertas.\\
+        A partir deste ponto, as jogadas ocorrem até que a quinta carta seja aberta. O jogador humano é perguntado se
+        deseja apostar, caso deseje ele digitara o valor que pretende aumentar a aposta, caso contrario digitará 0.\\
+        Em caso de aumento na aposta, os outros jogadores avaliarão se vão participar, caso não queiram, os jogadores
+        dão \"fold\", saindo do jogo por esta rodada.
+        Caso o jogador humano mantenha a aposta, alguma das AI's poderá aumentar a aposta, e o jogo verificara se todos
+        desejam continuar na rodada.
+        No final é contabilizado o score do jogador, levando em consideração as regras de mãos de poker original, mas
+        possuindo uma pequena diferença. As mãos de carta maior e dupla avaliam a soma das cartas ao invés de avaliar
+        qual é a maior do jogador.\\
+        Após essa avaliação, é dito qual jogador venceu a rodada e é perguntado se o jogador quer jogar outro round.
+		As combinações de mão possíveis do poker original são (Da de maior valor para a de menor valor):
+		\begin{enumerate}
+			\item[1)]Royal Straight Flush - Sequência “real”( ás, rei, dama, valete e 10) do mesmo naipe.
+			\item[2)]Straight Flush - Sequência de cartas do mesmo naipe.
+			\item[3)]Four of a kind - Quatro cartas iguais.
+			\item[4)]Full House - Uma trinca e uma dupla.
+			\item[5)]Flush - Cinco cartas do mesmo naipe.
+			\item[6)]Straight - Cinco cartas em sequência.
+			\item[7)]Three of a Kind - Trinca de cartas iguais e duas diferentes.
+			\item[8)]Two pair - Duas duplas de cartas iguais e uma diferente.
+			\item[9)]Pair - Uma dupla de cartas iguais e três cartas diferentes.
+			\item[10)]High Card - Não se enquadra em nenhuma das acima.
+		\end{enumerate}
+	\section{Modelagem do Jogo}
+		Para a realização deste trabalho fizemos primeiramente a modelagem. Para isso, precisamos fazer algumas perguntas importantes, como: "Quais são as classes importantes?", "Como podemos modularizar nosso código para podermos usar posteriormente?", "Como podemos decompor esse problema em problemas menores?".
+		A resposta dessas perguntas nos gerou dois diagramas importantes. 
+		\begin{enumerate}
+			\item[1] O primeiro deles é o diagrama de atividades. Esse diagrama nos mostra o que deverá acontecer no fluxo do nosso código durante a execução, ou seja, os possíveis caminhos e resultados gerados por ele.
+			\item[2] O segundo é o diagrama de classes. Esse diagrama nos mostra como foi decomposto o problema e a relação entre as classes escolhidas.
+		\end{enumerate}
+            \includegraphics[scale=0.60]{datividades.png}
+            \includegraphics[scale=0.60]{dclasses.png}
+		Usamos a Unified Modeling Language(UML), pois ela padroniza e tem um propósito geral. Alem disso, ela prioriza a representação dos elementos essênciais.
+		\section{Implementação}
+		A implementação do código foi feita na linguagem Java e usamos as classes vistas nos diagramas na seção anterior.
+		A classe principal é a classe "Table". Essa classe é chamada de uma classe chamada "Poker", a qual é um
+        esqueleto para jogos, o fizemos de acordo com o padrão de projeto Template Method. A classe Table coordena as
+        regras e o fluxo do jogo.Para isso, ela conta com atributos como "playersLeft", "pot" e usa funções como
+        "betRound" que esta dentro de "runGame" para rodar as rodadas e processar as regras do jogo.
+		Fizemos, também, uma classe "HandScorer", que calcula o valor de cada mão, utilizando histogramas com os valores
+        das cartas e seus naipes, utilizamos isso pra avaliar o conteudo da mão do jogador, também fazemos verificações
+        se o histograma possui valores seguidos para detectar sequências. O score varia como foi visto no entendimento das
+        regras do jogo.
+		Além disso, criamos as classes dos jogadores. Usamos uma classe chamada "Player" que define os jogadores do jogo. Essa classe controla a mão de cada jogador, seu dinheiro e se ele ainda está em jogo ou não. O que ocorre, porém, é que apenas um dos jogadores é jogável e os outros são jogados pela máquina.
+        Isso foi implementado por meio do padrão de projeto Adapter. As jogadas de cada player são processadas pela
+        função "agreeBet", que retorna valores inteiros que podem significar: manter a aposta, dar fold ou aumentar a
+        aposta. As maiores dificuldades de se implementar um jogo com esse tipo de personagens é o uso de inteligências
+        artificiais. No nosso jogo, criamos algo extremamente simples, utilizando histogramas de cartas e naipes
+        (conforme na implementação do scorer de mão) para influenciar suas decisões, unidos de alguns elementos de
+        aleatoriedade.
+        A entrada e saída foi unificada numa classe singleton, para que evitassemos erros devido manipulação de diversos
+        scanners sendo instanciados ao longo do código, portanto foi decidido que haveria apenas uma instancia nesta
+        classe centralizada.
+        \subsection{Dificuldades}
+        As maiores dificuldades na realização do trabalho foram a implementação das regras do Poker, que não é um jogo tão simples e as inteligências artificiais. Apesar de tudo, esses não são os propósitos desse trabalho, portanto fizemos uma versão simplificada de ambas as coisas. Isso nos permite focar nas partes principais do trabalho.
+        \subsection{Testes}
+        Não existe uma maneira fácil de testar algorítmos com resultados aleatórios e entradas de usuário, portanto fizemos um volume de testes grande para tentar garantir o funcionamento correto do jogo. A idéia principal foi tentar usar casos em que imaginávamos que o algorítmo poderia dar erros. Os testes foram bem sucedidos, porém isso não nos permite ter certeza do funcionamento correto em todos os casos.
+		\section{Conclusão}
+		Neste trabalho vimos que, primeiramente, a modelagem e o projeto são passos muito importantes na criação de
+        software. Isso foi visível quando depois de terminado o projeto, a implementação foi muito mais simples e o
+        trabalho final teve muito mais qualidades. Outra observação é que uso dos princípios de OO é muito útil e torna
+        o código mais legível e reutilizável. Por exemplo, se quiséssemos reutilizar a classe "Card" ou "Deck" em
+        qualquer outro jogo de cartas, seria possível. Caso tivessemos a necessidade de utilizar outra AI, poderia ser
+        simples, uma vez que utilizamos o padrão adapter, e temos como adicionar mais uma clausula a ele, sem ferir o
+        código previamente feito. Vemos assim que o uso de padrões de projeto e os padroes UML foram muito úteis para
+        padronizar o trabalho, tornando-o assim, mais fácil de atingir o entendimento e facilita sua expansão e extensão
+        para futuros projetos. Por fim, vimos que a utilização de inteligências artificiais não é uma tarefa simples,
+        porém tomamos como desafio para implementar uma mais simples como um desafio para incrementar nosso jogo.
+
+		\section{Bibliografia}
+        Material de aula.\\
+		Especificações da linguagem Java, pela oracle.\\
+		Java, como programar. Oitava edição (Deitel).\\
+        \end{document}
