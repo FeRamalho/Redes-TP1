@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,20 +32,25 @@ void logexit(const char *str){
 }
 
 //calcula o checksum
-unsigned checksum(void *buffer, size_t len, unsigned int count){
+unsigned cksum(void *buffer, int count){
+	register unsigned long sum = 0;
 	unsigned char *buf = (unsigned char *)buffer;
-	size_t i;
-	for (i=0; i<len; i++)
-		count += (unsigned int)(*buf++);
-	return count;
+	while(count--){
+		sum += *buf++;
+		if(sum & 0xFFFF0000){
+			sum &= 0xFFFF;
+			sum++;
+		}
+	}
+	return (sum & 0xFFFF);
 }
 
 //retorna o valor do checksum
 unsigned checkresult(FILE *f){
-	char buf[MAX_BUF];
-	size_t len;
+	char buf[4065];
+	uint16_t len;
 	len = fread(buf, sizeof(char), sizeof(buf), f);
-	unsigned long check = checksum(buf, len, 0);
+	unsigned long check = cksum(buf, len);
 	return check;
 }
 
