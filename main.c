@@ -50,6 +50,13 @@ unsigned cksum(void *buffer, int count){
 	return (sum & 0xFFFF);
 }
 
+void zeraBuffer(unsigned char *buffer){
+	int i;
+	for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
+		buffer[i] = 0;
+    }
+}
+
 //char to int
 unsigned int hexa(unsigned char * entrada, int bytes){
 	int i, aux;
@@ -125,6 +132,33 @@ void receptor1(FILE *output, int mysocket){
 	}
 }
 
+void receiver(FILE *output, int mysocket, header h1){
+	unsigned char buffer[MAX_IN];
+	int i;
+	while(recv(mysocket,buffer,8,0) == 4){ //recebe o sync
+		if(buffer[0] == 0xdc && buffer[1] == 0xc0 && buffer[2] == 0x23 && buffer[3] == 0xc2){
+			if(buffer[4] == 0xdc && buffer[5] == 0xc0 && buffer[6] == 0x23 && buffer[7] == 0xc2){
+				//COLOCAR NA STRUCT DO HEADER PRA CALCULAR O CHECKSUM
+				zeraBuffer(buffer); //zera o buffer para usar de novo
+				if(recv(mysocket,buffer,2,0) == 2){ //recebe o checksum
+					//unsigned int check = buffer;
+					//converter o checksum de volta
+					zeraBuffer(buffer);
+					if(recv(mysocket,buffer,2,0) == 2){ //recebe o length
+						//colocar no header
+						if(recv(mysocket,buffer,2,0) == 2){ //recebe o reserved
+							if(recv(mysocket,buffer,length,0) != -1){ //recebe o payload
+								//colocar no header
+								//calcular o checksum
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 //funcao que tem o papel do transmissor
 void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a transmissao
 	unsigned char buffer[MAX_IN];
@@ -143,38 +177,30 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
         uint16_t newlen = length+115;
         unsigned char *p=(unsigned char *)&h2;
         unsigned int check = cksum(p, newlen);
+        printf("CHE: %u\n", check);
         check = htonl(check); //converte o checksum
         h2.chksum[0] = (check & 0xFF); //coloca o checksum no header
 		h2.chksum[1] = ((check >> 8) & 0xFF);
 
 		unsigned char newbuffer[MAX_IN];
-		for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-            newbuffer[i] = 0;
-        }
+		zeraBuffer(newbuffer); //zera o buffer para usar de novo
 		strcpy(newbuffer,h2.syn1);
 		strcat(newbuffer,h2.syn2);
 		send(mysocket, newbuffer, 8, 0);
-		for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-            newbuffer[i] = 0;
-        }
+		zeraBuffer(newbuffer); //zera o buffer para usar de novo
         strcpy(newbuffer,h2.chksum);
-        strcat(newbuffer,h2.length);
-		send(mysocket, newbuffer, 4, 0);
-		for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-            newbuffer[i] = 0;
-        }
+        //strcat(newbuffer,h2.length);
+		send(mysocket, newbuffer, 2, 0);
+		zeraBuffer(newbuffer); //zera o buffer para usar de novo
+        strcpy(newbuffer,h2.length);
+		send(mysocket, newbuffer, 2, 0);
+		zeraBuffer(newbuffer); //zera o buffer para usar de novo
         strcpy(newbuffer,h2.reserved);
         send(mysocket, newbuffer, 2, 0);
-        for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-            newbuffer[i] = 0;
-        }
+        zeraBuffer(newbuffer); //zera o buffer para usar de novo
         strcpy(newbuffer,h2.buffer);
         send(mysocket, newbuffer, length, 0);
-
-		for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-            buffer[i] = 0;
-        }
-        buffer[0] = '\0';
+        zeraBuffer(buffer);
 	}
 		
 }
@@ -230,6 +256,7 @@ int main(int argc, char *argv[]){
 		//pthread_create( &thread_id , NULL, receptor , (void*) &p1);
 		//transmissor
 		transmissor(input, p1.mysocket, h2);
+		//receiver(output, newsock, h1);
 		printf("saiu\n");
 	}
 	else if(strcmp( mode, "passivo" ) == 0 ){ //modo passivo
