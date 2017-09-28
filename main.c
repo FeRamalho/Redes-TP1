@@ -118,23 +118,24 @@ void receptor1(FILE *output, int mysocket){
 										aux[0] = 0; aux[1] = 0;
 										read(mysocket, &aux, 2);
 										bcheck[10] = aux[1]; bcheck[11] = aux[2];
+										//unsigned char * length = (unsigned char*)ntohl(aux);
 										length = hexa(aux, 2);
-										printf("tamanho : %d\n",length);
-										//unsigned char ordem [2] = (unsigned char*)ntohl(aux);
+										length = ntohl(length);
+										printf("tamanho : %u",length);
 										aux[0] = 0; aux[1] = 0;
 										read(mysocket, &aux, 2);
 										bcheck[12] = aux[1]; bcheck[13] = aux[2];
 										read(mysocket, &buffer, length);
 										int i;
 										int j = 14; 
+										length = 20;
 										for(i = 0; i < length; i++){
 											bcheck[j] = buffer [i];
 											j++; 
-											//printf("%x", bcheck[j]);
-											//fprintf(output, "%x", buffer[i]);
+											printf("%x", bcheck[j]);
 										}
-										newcheck = cksum(bcheck, j+115);
-										if(newcheck = checksum){
+										newcheck = cksum(bcheck, j);
+										if(newcheck == checksum){
 											fwrite(&buffer,sizeof(unsigned char), length, output);
 										}
 										printf("\nnovo check = %d e check antigo = %d\n", newcheck, checksum);
@@ -163,19 +164,20 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
 			length ++;
 			strcat(h2.buffer, buffer);
 		} 
-		printf("tamanho: %d\n",length);
 		length = htonl(length); //converte o length
+		printf("net len %u\n", length);
 		h2.chksum[0] = 0; //zera o checksum inicial
 		h2.chksum[1] = 0;
-		h2.length[0] = (length & 255); //coloca o length no header
-		h2.length[1] = ((length >> 8) & 255);
+		h2.length[0] = (length & 0xff); //coloca o length no header
+		h2.length[1] = ((length >> 8) & 0xff);
+		sprintf(h2.length,"%u",length);
         uint16_t newlen = length+115;
         unsigned char *p=(unsigned char *)&h2;
         unsigned int check = cksum(p, newlen);
         printf("CHE: %u\n", check);
-        check = htonl(check); //converte o checksum
-        h2.chksum[0] = (check & 255); //coloca o checksum no header
-		h2.chksum[1] = ((check >> 8) & 255);
+        h2.chksum[0] = (check & 0xff); //coloca o checksum no header
+		h2.chksum[1] = ((check >> 8) & 0xff);
+		sprintf(h2.chksum,"%u",check);
 		unsigned char newbuffer[MAX_IN];
 		zeraBuffer(newbuffer); //zera o buffer para usar de novo
 		strcpy(newbuffer,h2.syn1);
