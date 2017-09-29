@@ -50,34 +50,72 @@ unsigned cksum(void *buffer, int count){
 	return (sum & 0xFFFF);
 }
 
-void zeraBuffer(unsigned char *buffer){
-	int i;
-	for (i = 0; i < MAX_IN; ++i){ //zera o buffer para usar de novo
-		buffer[i] = 0;
-    }
-}
-
-//char to int
-unsigned int hexa(unsigned char * entrada, int bytes){
-	int i, aux;
-	aux = bytes-1;
-	unsigned int saida;
-	for(i = 0; i < bytes; i++){
-		int b = 2*(aux);
-		int c = pow(16, b);
-		saida += c * entrada[i];
-		aux--;
-		printf("%d = %x\n", b, saida); 	
-	}
-	return saida;
-}
-
 //thread function que faz o papel do receptor 
 void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve na monitoria
 	parameters *p1;
 	p1 = (parameters*)parameter;
 	FILE *output = p1->output;
-	int mysock = p1->mysocket;
+	int mysocket = p1->mysocket;
+	unsigned char buffer[MAX_IN];
+	header h1;
+	int i = 0;
+	while(1){
+		read(mysocket, &buffer, 1);
+		if(buffer[i] = 0xdc){
+			read(mysocket, &buffer, 1);
+			if(buffer[i] = 0xc0){
+				read(mysocket, &buffer, 1);
+				if(buffer[i] = 0x23){
+					read(mysocket, &buffer, 1);
+					if(buffer[i] = 0xc2){
+						read(mysocket, &buffer, 1);
+						if(buffer[i] = 0xdc){
+							read(mysocket, &buffer, 1);
+							if(buffer[i] = 0xc0){
+								read(mysocket, &buffer, 1);
+								if(buffer[i] = 0x23){
+									read(mysocket, &buffer, 1);
+									if(buffer[i] = 0xc2){
+										uint16_t newcheck;
+										uint16_t length = 0;
+										unsigned char aux[2] = {0,0};
+										h1.syn1[0] = 0xdc; h1.syn1[1] = 0xc0;
+										h1.syn1[2] = 0x23; h1.syn1[3] = 0xc2;
+										h1.syn2[0] = 0xdc; h1.syn2[1] = 0xc0;
+										h1.syn2[2] = 0x23; h1.syn2[3] = 0xc2;
+										read(mysocket, &aux, 2);
+										uint16_t checksum = (*(uint16_t *)aux);
+										h1.chksum = 0;
+										read(mysocket, &aux, 2);
+										length = ntohs(*(uint16_t *)aux);
+										h1.length = length;
+										read(mysocket, &aux, 2);
+										h1.reserved[0] = aux[0]; 
+										h1.reserved[1] = aux[1];
+										read(mysocket, &buffer, length);
+										for(i = 0; i < length; i++){
+											h1.buffer[i] = buffer[i];
+										}
+
+        								unsigned char *p=(unsigned char *)&h1;
+										newcheck = cksum(p, length+115);
+										if(newcheck == checksum){
+											printf("deu certo\n");
+											fwrite(&buffer,sizeof(unsigned char), length, output);
+										}
+										break;
+									}
+								}
+							}
+						}	
+					}
+				}
+			}
+		}
+		//else if( fechou a conexao ){
+		//	return;
+		//}
+	}
 	return NULL;
 }
 
@@ -112,29 +150,24 @@ void receptor1(FILE *output, int mysocket){
 										h1.syn2[2] = 0x23; h1.syn2[3] = 0xc2;
 										read(mysocket, &aux, 2);
 										uint16_t checksum = (*(uint16_t *)aux);
-										printf("checksum = %u\n", checksum);
-										h1.chksum = checksum;
+										h1.chksum = 0;
 										read(mysocket, &aux, 2);
 										length = ntohs(*(uint16_t *)aux);
 										h1.length = length;
-										printf("tamanho  = %u",length);
 										read(mysocket, &aux, 2);
 										h1.reserved[0] = aux[0]; 
 										h1.reserved[1] = aux[1];
 										read(mysocket, &buffer, length);
-										length = 25;
 										for(i = 0; i < length; i++){
 											h1.buffer[i] = buffer[i];
 										}
 
         								unsigned char *p=(unsigned char *)&h1;
 										newcheck = cksum(p, length+115);
-										if(1/*newcheck == checksum*/){
-											fwrite(&buffer,sizeof(buffer), length, output);
+										if(newcheck == checksum){
+											printf("deu certo\n");
+											fwrite(&buffer,sizeof(unsigned char), length, output);
 										}
-										printf("\nnovo check = %d e check antigo = %d\n", newcheck, checksum);
-										//tem que fazer isso aqui funcionar indefinidamente até acabar a conexao
-										//porque se nao ele nao acaba e nunca da fclose(); ve na monitoria
 										break;
 									}
 								}
@@ -144,6 +177,9 @@ void receptor1(FILE *output, int mysocket){
 				}
 			}
 		}
+		//else if( fechou a conexao ){
+		//	return;
+		//}
 	}
 }
 
@@ -158,11 +194,9 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
 			strcat(h2.buffer, buffer);
 		} 
 		h2.length = htons(length);
-		printf("net len: %u\n", h2.length);
         uint16_t newlen = length+115;
         unsigned char *p=(unsigned char *)&h2;
         uint16_t check = cksum(p, newlen);
-        printf("CHECKSUM: %u\n", check);
         h2.chksum = check;
         unsigned char buf[2];
 		send(mysocket, h2.syn1, 4, 0); 		  	// syn
@@ -170,7 +204,6 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
         send(mysocket, &h2.chksum, 2, 0); 	 	//checksum
 		send(mysocket, &h2.length, 2, 0); 	 	//length
         send(mysocket, h2.reserved, 2, 0); 	  	//reserved
-        printf("len %u", length);
         send(mysocket, h2.buffer, length, 0); 	//buffer
 	}
 		
@@ -224,10 +257,9 @@ int main(int argc, char *argv[]){
 		p1.mysocket = newsock;
 		//pthread_create( &thread_id , NULL, receptor , (void*) &p1);
 		//transmissor
-
+		//transmissor(input, p1.mysocket, h2);	
 		////////////////teste/////////////
 		receptor1(output,newsock);
-		//receiver(output, newsock, h1);
 		printf("saiu\n");
 	}
 	else if(strcmp( mode, "passivo" ) == 0 ){ //modo passivo
