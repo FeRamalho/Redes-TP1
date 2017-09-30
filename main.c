@@ -26,6 +26,7 @@ typedef struct header{
 //parametros da thread
 typedef struct parameters{
 	FILE *output;
+	char *out; //usar esse se não puder fechar a conexao
 	int mysocket;
 }parameters; 
 
@@ -68,7 +69,8 @@ void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve
 	//unsigned char arqbuffer[MAX_IN]; zeraBuffer(arqbuffer);
 	uint16_t lengthTotal = 0;
 	read(mysocket, &buffer, 1);
-	while(1){
+	while(1){ 
+		//FILE *output = fopen(p1->out,"ab"); //usar esse se não puder fechar a conexao
 		if(buffer[i] = 0xdc){
 			read(mysocket, &buffer, 1);
 			if(buffer[i] = 0xc0){
@@ -113,6 +115,7 @@ void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve
 											printf("%s\n", buffer);
 											fwrite(&buffer,sizeof(unsigned char), length, output);
 											zeraBuffer(h1.buffer);
+											//fclose(output); //usar esse se não puder fechar a conexao
 										}
 										zeraBuffer(buffer);
 										//break;
@@ -126,8 +129,8 @@ void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve
 		}
 		int a = recv(mysocket,&buffer,1,0);
 		//read(mysocket, &buffer, 1);
-		if(a <= 0) {  //fwrite(&arqbuffer,sizeof(unsigned char), lengthTotal, output); 
-			break;}
+		if(a <= 0) { fclose(output); //ISSO FUNCIONA SE CONSIDERAR QUE PODE FECHAR O  
+			break;} 				  //SOCKET DPS Q TERMINA DE LER O ARQ
 	}
 	//pthread_exit(NULL);
 	//return NULL;
@@ -254,7 +257,7 @@ int main(int argc, char *argv[]){
 
 	//inicializações
 	input = fopen( argv[1], "rb" );
-	output = fopen( argv[2], "ab" );
+	output = fopen( argv[2], "ab" ); //tirar esse se nao puder fechar a conexao
 	numip = argv[3];
 	numport = atoi( argv[4] );
 	strcpy( mode , argv[5] );
@@ -266,6 +269,9 @@ int main(int argc, char *argv[]){
 	h1.reserved[1] = 0x00;
 	h2 = h1;
     p1.output = output;
+
+    //char *out = argv[2]; //usar esse se não puder fechar a conexao
+    //p1.out = out; //usar esse se não puder fechar a conexao
 
 	//cria socket
 	mysock = socket(AF_INET, SOCK_STREAM, 0); 
@@ -329,6 +335,6 @@ int main(int argc, char *argv[]){
 	close(mysock);
 	close(newsock);
 	fclose(input);
-	fclose(output);
+	//fclose(output);
 	return 0;
 }
