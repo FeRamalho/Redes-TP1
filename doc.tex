@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[10pt]{article}
 
 % Packages used
 \usepackage[T1]{fontenc}
@@ -7,10 +7,10 @@
 \usepackage{color}
 \usepackage{hyperref}
 \usepackage{graphicx}
-\title{\LARGE \textbf{\uppercase{REDES\\Trabalho prático 1A}} }
+\title{\LARGE \textbf{\uppercase{REDES DE COMPUTADORES\\Trabalho prático 1A}} }
 \date{2 de setembro 2017}
 \author{Rafael Rubbioli : 2014124838\\
-\and Fernanda Ramalho : \\ Departamento de Ciência da computação, UFMG}
+\and Fernanda Ramalho : 2014106368 \\ Departamento de Ciência da computação, UFMG}
 \begin{document}
 	\maketitle 
 	\section{Introdução}
@@ -33,16 +33,21 @@
 			
 			\textbf{./frame INPUT OUTPUT IP PORT MODE}
 		\subsection{Transmissão}
-			A transmissão dos dados é feita como ja foi descrito anteriormente. Primeiro o arquivo é lido de um em byte binário e enquadrado. Depois disso, é feito o checksum e o quadro é transmitido. A maneira como a transmissão é feita não importa, desde que todos os dados sejam enviados corretamente.
+			A transmissão dos dados é feita como já foi descrito anteriormente. Primeiro o arquivo é lido de um em um byte, até que o tamanho máximo permitido no payload seja obtido, e enquadrado. O tamanho dos dados lidos é calculado enquanto os bytes são lidos. 
+			\\Depois disso, é feito o checksum e o quadro inteiro é transmitido. A maneira como a transmissão é feita não importa, desde que todos os dados sejam enviados corretamente.
+			\\A função que implementa a transmissão termina quando o arquivo inteiro é lido. A conexão é fechada. Assim, para continuar a mandar os dados, é preciso fazer outra conexão.
 		\subsection{Recepção}
 			A recepção dos dados é feita de maneira que nada é lido até chegarem bytes de sincronização, depois é lido o restante do quadro e feito o checksum. Caso o checksum seja igual ao recebido no quadro, os dados são escritos no arquivo de saída.
-		\subsection{full duplex}
+			\\O arquivo de saída é aberto em modo "ab", ou seja, permite que escreva no final do arquivo, sem modificar o que já está lá. Em caso de vários quadros, os payloads recebidos serão colocados no final.
+			\\A função que implementa o receptor só para de esperar por quadros quando o cliente fecha a conexão. 
+		\subsection{Full Duplex}
 			O programa rodará da maneira full duplex, ou seja, fará o envio e o recebimento dos dados ao mesmo tempo, independentemente do modo em que esteja rodando (ativo ou passivo). Para isso, usamos threads. 
 			\\ A thread é um "desvio" controlado no fluxo de execução onde criamos mais de um fluxo no programa. Neste caso, precisamos criar apenas um fluxo adicional para fazer o recebimento de dados, já que o fluxo principal estava fazendo a transmissão dos dados.
-	\ection{Terminação}
+	\section{Terminação}
 		O programa é terminado quando o nó remoto fecha a conexão ou quando recebe um sinal de interrupção do teclado (ctrl + c).
 	\section{Dificuldades}
 		As maiores dificuldades do trabalho foram em trabalhar com os tipos da linguagem C. O problema se encontra nos \textit{casts} e nas converções de tipos.
+		\\
 		bla bla bla
 	\section{Testes}
 		Os testes foram feitos rodando o programa em dois terminais diferentes e com um testbench que envia quadros errados. Além disso, foram usados vários tipos de arquivos como .txt, .pdf, .jpg etc
