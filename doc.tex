@@ -39,7 +39,7 @@
 		\subsection{Recepção}
 			A recepção dos dados é feita de maneira que nada é lido até chegarem bytes de sincronização, depois é lido o restante do quadro e feito o checksum. Caso o checksum seja igual ao recebido no quadro, os dados são escritos no arquivo de saída.
 			\\O arquivo de saída é aberto em modo "ab", ou seja, permite que escreva no final do arquivo, sem modificar o que já está lá. Em caso de vários quadros, os payloads recebidos serão colocados no final.
-			\\A função que implementa o receptor só para de esperar por quadros quando o cliente fecha a conexão. 
+			\\A função que implementa o receptor só para de esperar por quadros quando o cliente fecha a conexão. Além disso, ela lê os bytes de sincronização um a um para, caso chegue bytes não esperados, seja mais fácil de enquadrar o quadro de novo. O arquivo de saída é fechado dentro dessa função assim que a conexão com o cliente acaba.
 		\subsection{Full Duplex}
 			O programa rodará da maneira full duplex, ou seja, fará o envio e o recebimento dos dados ao mesmo tempo, independentemente do modo em que esteja rodando (ativo ou passivo). Para isso, usamos threads. 
 			\\ A thread é um "desvio" controlado no fluxo de execução onde criamos mais de um fluxo no programa. Neste caso, precisamos criar apenas um fluxo adicional para fazer o recebimento de dados, já que o fluxo principal estava fazendo a transmissão dos dados.
@@ -47,8 +47,7 @@
 		O programa é terminado quando o nó remoto fecha a conexão ou quando recebe um sinal de interrupção do teclado (ctrl + c).
 	\section{Dificuldades}
 		As maiores dificuldades do trabalho foram em trabalhar com os tipos da linguagem C. O problema se encontra nos \textit{casts} e nas converções de tipos.
-		\\
-		bla bla bla
+		\\Outra dificuldade foi trabalhar com as threads para poder controlar a transmissão e recepção dos quadros. Como as threads têm comportamentos imprevisíveis (algumas podem acabar antes das outras, impedindo que algumas tarefas sejam executadas) foi preciso usar a função \textit{pthreadjoin}, que suspende a execução de uma thread até que a outra termine.
 	\section{Testes}
 		Os testes foram feitos rodando o programa em dois terminais diferentes e com um testbench que envia quadros errados. Além disso, foram usados vários tipos de arquivos como .txt, .pdf, .jpg etc
 		A corretude do programa foi verificada.
