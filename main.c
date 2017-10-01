@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 //#define MAX_BUF 4096
-#define MAX_IN 65535
+#define MAX_IN 65534
 
 
 //cabeçalho
@@ -106,13 +106,16 @@ void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve
 										for(i = 0; i < length; i++){
 											h1.buffer[i] = buffer[i];
 										}
+										if(length%2 != 0) h1.buffer[length] = 0;
         								unsigned char *p=(unsigned char *)&h1;
 										newcheck = cksum(p, length+112);
+										//newcheck = cksum(p, length+14);
 										if(newcheck == checksum){
 											printf("deu certo\n");
 											//strcat(arqbuffer, buffer);
 											//lengthTotal+= length;
-											printf("%s\n", buffer);
+											//printf("%s\n", h1.buffer);
+											h1.buffer[length] ='\0';
 											fwrite(&buffer,sizeof(unsigned char), length, output);
 											zeraBuffer(h1.buffer);
 											//fclose(output); //usar esse se não puder fechar a conexao
@@ -136,75 +139,6 @@ void *receptor(void *parameter){ //falta fazer esse trem de thread funcionar, ve
 	//return NULL;
 }
 
-//receptor sem thread 
-void receptor1(FILE *output, int mysocket){
-	unsigned char buffer[MAX_IN];
-	header h1;
-	int i = 0;
-	unsigned char arqbuffer[MAX_IN];
-	uint16_t length = 0;
-	while(1){
-		int a = recv(mysocket,&buffer,1,0);
-		if(a <= 0) {  /*fwrite(&arqbuffer,sizeof(unsigned char), length, output);*/ break;}
-		if(buffer[i] = 0xdc){
-			read(mysocket, &buffer, 1);
-			if(buffer[i] = 0xc0){
-				read(mysocket, &buffer, 1);
-				if(buffer[i] = 0x23){
-					read(mysocket, &buffer, 1);
-					if(buffer[i] = 0xc2){
-						read(mysocket, &buffer, 1);
-						if(buffer[i] = 0xdc){
-							read(mysocket, &buffer, 1);
-							if(buffer[i] = 0xc0){
-								read(mysocket, &buffer, 1);
-								if(buffer[i] = 0x23){
-									read(mysocket, &buffer, 1);
-									if(buffer[i] = 0xc2){
-										uint16_t newcheck;
-										uint16_t length = 0;
-										unsigned char aux[2] = {0,0};
-										h1.syn1[0] = 0xdc; h1.syn1[1] = 0xc0;
-										h1.syn1[2] = 0x23; h1.syn1[3] = 0xc2;
-										h1.syn2[0] = 0xdc; h1.syn2[1] = 0xc0;
-										h1.syn2[2] = 0x23; h1.syn2[3] = 0xc2;
-										read(mysocket, &aux, 2);
-										uint16_t checksum = (*(uint16_t *)aux);
-										h1.chksum = 0;
-										read(mysocket, &aux, 2);
-										length = ntohs(*(uint16_t *)aux);
-										h1.length = length;
-										read(mysocket, &aux, 2);
-										h1.reserved[0] = aux[0]; 
-										h1.reserved[1] = aux[1];
-										read(mysocket, &buffer, length);
-										for(i = 0; i < length; i++){
-											h1.buffer[i] = buffer[i];
-										}
-										zeraBuffer(buffer);
-        								unsigned char *p=(unsigned char *)&h1;
-										newcheck = cksum(p, length+112);
-										if(newcheck == checksum){
-											printf("deu certo\n");
-											strcat(arqbuffer, h1.buffer);
-											//uint16_t lengthTotal; lengthTotal+= length;
-											fwrite(&buffer,sizeof(unsigned char), length, output);
-										}
-										zeraBuffer(h1.buffer);
-										//break;
-									}
-								}
-							}
-						}	
-					}
-				}
-			}
-		}
-
-		
-	}
-}
-
 //funcao que tem o papel do transmissor
 void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a transmissao
 	unsigned char buffer[1];
@@ -212,7 +146,7 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
 	while(!feof(input)){ //le ate o fim do arquivo
 		int i;
 		while( fread(&buffer,sizeof(unsigned char), 1, input) ){
-			if(flaglength == 80){ //mudar para MAX_IN depois
+			if(flaglength == 85){ //mudar para MAX_IN depois
 				flaglength = 0;
 				break;
 			} 
@@ -223,7 +157,9 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
 		//printf("%s\n", h2.buffer);
 		h2.length = htons(length);
         uint16_t newlen = length+112;
+        //uint16_t newlen = length+14;
         h2.chksum = 0; //zera o checksum inicial
+        if(length%2 != 0) h2.buffer[length] = 0;
         unsigned char *p=(unsigned char *)&h2;
         uint16_t check = cksum(p, newlen);
         h2.chksum = check;
@@ -233,6 +169,7 @@ void transmissor(FILE *input, int mysocket, header h2){ //tem que terminar a tra
         send(mysocket, &h2.chksum, 2, 0); 	 	//checksum
 		send(mysocket, &h2.length, 2, 0); 	 	//length
         send(mysocket, h2.reserved, 2, 0); 	  	//reserved
+        h2.buffer[length] ='\0';
         send(mysocket, h2.buffer, length, 0); 	//buffer
         zeraBuffer(h2.buffer); //zera o buffer para usar de novo
         length=1 ;
@@ -256,8 +193,8 @@ int main(int argc, char *argv[]){
     pthread_t thread_id;
 
 	//inicializações
-	input = fopen( argv[1], "rb" );
-	output = fopen( argv[2], "ab" ); //tirar esse se nao puder fechar a conexao
+	//input = fopen( argv[1], "rb" );
+	//output = fopen( argv[2], "ab" ); //tirar esse se nao puder fechar a conexao
 	numip = argv[3];
 	numport = atoi( argv[4] );
 	strcpy( mode , argv[5] );
@@ -268,7 +205,7 @@ int main(int argc, char *argv[]){
 	h1.reserved[0] = 0x00;
 	h1.reserved[1] = 0x00;
 	h2 = h1;
-    p1.output = output;
+   // p1.output = output;
 
     //char *out = argv[2]; //usar esse se não puder fechar a conexao
     //p1.out = out; //usar esse se não puder fechar a conexao
@@ -287,6 +224,9 @@ int main(int argc, char *argv[]){
 
 	//modo ativo
 	if(strcmp(mode, "ativo") == 0){
+		input = fopen( argv[1], "rb" );
+	output = fopen( argv[2], "ab" );
+	p1.output = output;
 		//while(1){
 		//abertura ativa
 		newsock = socket(AF_INET, SOCK_STREAM, 0);
@@ -309,11 +249,19 @@ int main(int argc, char *argv[]){
       		logexit("bind: ");
     	}
     	//espera de conexão
-    	if( listen(mysock, 1) < 0 ){
+    	//if( listen(mysock, 1) < 0 ){
+      	//	close(mysock);
+      	//	logexit("listen: \n");
+    	//}
+    	input = fopen( argv[1], "rb" );
+    	while(1){  printf("ESPERANDO CONEXAO\n");
+    	
+	output = fopen( argv[2], "ab" );
+	p1.output = output;
+	if( listen(mysock, 1) < 0 ){
       		close(mysock);
       		logexit("listen: \n");
     	}
-    	while(1){
     		//client adress structure
     		//struct in_addr client_addr = { .s_addr = inet_addr(numip) }; //TROCAR ESSE COM O DEBAIXO DEPOIS
     		struct in_addr client_addr = { .s_addr = htonl(INADDR_ANY) }; 
@@ -333,7 +281,7 @@ int main(int argc, char *argv[]){
     	}
 	}
 	close(mysock);
-	close(newsock);
+	//close(newsock);
 	fclose(input);
 	//fclose(output);
 	return 0;
