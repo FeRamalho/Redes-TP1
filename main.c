@@ -105,12 +105,13 @@ void *receptor(void *parameter){
 										for(i = 0; i < length; i++){
 											h1.buffer[i] = buffer[i];
 										}
-										if(length%2 != 0) h1.buffer[length] = 0;
+										//if(length%2 != 0) h1.buffer[length] = 0;
         								unsigned char *p=(unsigned char *)&h1;
+										//newcheck = cksum(p, length+112);
 										newcheck = cksum(p, length+14);
 										if(newcheck == checksum){
 											printf("deu certo\n");
-											h1.buffer[length] ='\0';
+											//h1.buffer[length] ='\0';
 											fwrite(&buffer,sizeof(unsigned char), length, output);
 											zeraBuffer(h1.buffer); 
 										}
@@ -125,6 +126,7 @@ void *receptor(void *parameter){
 			}
 		}
 		if(flag <= 0){
+			fclose(output);
 			return NULL;
 		}
 	}
@@ -148,9 +150,10 @@ void transmissor(FILE *input, int mysocket, header h2){
 			flag = fread(&buffer,sizeof(unsigned char), 1, input);
 		} 
 		h2.length = htons(length);
-        uint16_t newlen = length+14;
+        //uint16_t newlen = length+112;
+		uint16_t newlen = length+14;
         h2.chksum = 0; //zera o checksum inicial
-        if(length%2 != 0) h2.buffer[length] = 0;
+        //if(length%2 != 0) h2.buffer[length] = 0;
         unsigned char *p=(unsigned char *)&h2;
         uint16_t check = cksum(p, newlen);
         h2.chksum = check;
@@ -160,10 +163,11 @@ void transmissor(FILE *input, int mysocket, header h2){
         send(mysocket, &h2.chksum, 2, 0); 	 		// CHECKSUM
 		send(mysocket, &h2.length, 2, 0); 	 		// LENGTH
         send(mysocket, h2.reserved, 2, 0); 	  		// RESERVED
-        h2.buffer[length] ='\0';
+        //h2.buffer[length] ='\0';
         send(mysocket, h2.buffer, length, 0); 	// PAYLOAD
         zeraBuffer(h2.buffer); //zera o buffer para usar de novo
 	}
+	close(mysocket);
 }
 
 
@@ -218,11 +222,13 @@ int main(int argc, char *argv[]){
 		p1.mysocket = newsock;
 		//RECEPTOR
 		pthread_create( &thread_id1 , NULL, receptor , (void*) &p1);
-		//pthread_join(thread_id1, NULL);
+		pthread_join(thread_id1, NULL);
+		//fclose(output);
 		//TRANSMISSOR
 		transmissor(input, p1.mysocket, h2);
 		printf("saiu\n");
-		close(newsock);
+		//fclose(input);
+		//close(newsock);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//					MODO PASSIVO
@@ -233,32 +239,34 @@ int main(int argc, char *argv[]){
       		fclose(output);
       		logexit("bind: ");
     	}
+    	//while(1){  printf("ESPERANDO CONEXAO\n");
 	//ESPERA DE CONEXÃO
 	if( listen(mysock, 1) < 0 ){
       		close(mysock);
       		fclose(input);
       		fclose(output);
       		logexit("listen: \n");
-    	}
-    	while(1){  printf("ESPERANDO CONEXAO\n");
-	    	//CLIENT ADDRESS
-	    	//struct in_addr client_addr = { .s_addr = inet_addr(numip) }; //TROCAR ESSE COM O DEBAIXO DEPOIS
-	    	struct in_addr client_addr = { .s_addr = htonl(INADDR_ANY) };
-	    	socklen_t client_len = sizeof(client_addr);
-	    	//COMPLETA A ABERTURA PASSIVA
-	    	newsock = accept(mysock, (struct sockaddr *)&client_addr, &client_len);
-	    	p1.mysocket = newsock;
-	    	//RECEPTOR
-	       	pthread_create( &thread_id2 , NULL ,  receptor , (void*) &p1);
-	    	//pthread_join(thread_id2, NULL);
-	    	//TRANSMISSOR
-	    	transmissor(input, p1.mysocket, h2);
-    		close(newsock);
-    	}
+    	} 
+    	//CLIENT ADDRESS
+    	//struct in_addr client_addr = { .s_addr = inet_addr(numip) }; //TROCAR ESSE COM O DEBAIXO DEPOIS
+    	struct in_addr client_addr = { .s_addr = htonl(INADDR_ANY) }; 
+    	socklen_t client_len = sizeof(client_addr);
+    	//COMPLETA A ABERTURA PASSIVA
+    	newsock = accept(mysock, (struct sockaddr *)&client_addr, &client_len);
+    	p1.mysocket = newsock;
+    	//RECEPTOR
+       	pthread_create( &thread_id2 , NULL ,  receptor , (void*) &p1);
+    	//pthread_join(thread_id2, NULL);
+    	//fclose(output);
+    	//TRANSMISSOR
+    	transmissor(input, p1.mysocket, h2);
+    	//pthread_join(thread_id2, NULL);
+    	//fclose(input);
+    	//}
+    	//close(newsock);
 	}
-	fclose(output);
 	fclose(input);
-	close(mysock);
+	//close(mysock);
 	//close(newsock);
 	return 0;
 }
