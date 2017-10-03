@@ -47,10 +47,11 @@
 		O programa é terminado quando o nó remoto fecha a conexão ou quando recebe um sinal de interrupção do teclado (ctrl + c).
 	\section{Dificuldades}
 		As maiores dificuldades do trabalho foram em trabalhar com os tipos da linguagem C. O problema se encontra nos \textit{casts} e nas converções de tipos.
-		\\Outra dificuldade foi trabalhar com as threads para poder controlar a transmissão e recepção dos quadros. Como as threads têm comportamentos imprevisíveis (algumas podem acabar antes das outras, impedindo que algumas tarefas sejam executadas) foi preciso usar a função \textit{pthreadjoin}, que suspende a execução de uma thread até que a outra termine.
+		\\Outra dificuldade foi trabalhar com as threads para poder controlar a transmissão e recepção dos quadros. Como as threads têm comportamentos imprevisíveis (algumas podem acabar antes das outras, impedindo que algumas tarefas sejam executadas) foi preciso usar a função \textit{pthreadjoin}, que suspende a execução de uma thread até que a outra termine, mas encontramos dificuldade em fazer o join funcionar para ambos os transmissor e receptor.
+		\\Por fim, houve a dificuldade de lidar com o fechamento do arquivo. Como o código deveria rodar de maneira indeterminada tivemos que escolher o local adequado para a função fclose().
 	\section{Testes}
 		Os testes foram feitos rodando o programa em dois terminais diferentes e com um testbench que envia quadros errados. Além disso, foram usados vários tipos de arquivos como .txt, .pdf, .jpg etc
-		A corretude do programa foi verificada.
+		A corretude do programa foi verificada apenas em alguns casos, mas não foram encontrados os erros. Suspeitamos que seja devido erro no uso das threads.
 	\section{Conclusão} 
-		Funciona.
+		Houveram algumas dificuldades, talvez no uso das threads que não havia muita prática, ou talvez na dificuldade de tratamento dos dados na linguagem C. Porém os conceitos foram bem trabalhados e não prejudicou o aprendizado principal do trabalho que era sobre as redes de computadores e o uso de quadros.
 \end{document}
