@@ -222,10 +222,11 @@ int main(int argc, char *argv[]){
 		p1.mysocket = newsock;
 		//RECEPTOR
 		pthread_create( &thread_id1 , NULL, receptor , (void*) &p1);
-		pthread_join(thread_id1, NULL);
+		//pthread_join(thread_id1, NULL);
 		//fclose(output);
 		//TRANSMISSOR
 		transmissor(input, p1.mysocket, h2);
+		pthread_join(thread_id1, NULL);
 		printf("saiu\n");
 		//fclose(input);
 		//close(newsock);
@@ -260,7 +261,7 @@ int main(int argc, char *argv[]){
     	//fclose(output);
     	//TRANSMISSOR
     	transmissor(input, p1.mysocket, h2);
-    	//pthread_join(thread_id2, NULL);
+    	pthread_join(thread_id2, NULL);
     	//fclose(input);
     	//}
     	//close(newsock);
